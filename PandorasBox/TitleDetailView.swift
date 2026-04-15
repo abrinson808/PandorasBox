@@ -68,7 +68,9 @@ struct TitleDetailView: View {
             }
         }
         .task {
-            await viewModel.getVideoId(for: titleName)
+            if let titleId = title.id {
+                await viewModel.getVideoId(for: titleId, mediaType: title.mediaType ?? "movie")
+            }
         }
     }
 }

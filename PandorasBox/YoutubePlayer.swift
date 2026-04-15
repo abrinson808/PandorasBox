@@ -6,21 +6,48 @@
 //
 
 import SwiftUI
-import WebKit
+import SafariServices
 
-struct YoutubePlayer: UIViewRepresentable {
-    let webView = WKWebView()
-    let videoID: String
-    let youtubeBaseURL = APIConfig.shared?.youtubeBaseURL
-    
-    func makeUIView(context: Context) -> some UIView {
-        webView
+struct SafariView: UIViewControllerRepresentable {
+    let url: URL
+
+    func makeUIViewController(context: Context) -> SFSafariViewController {
+        SFSafariViewController(url: url)
     }
-    
-    func updateUIView(_ uiView: UIViewType, context: Context) {
-        guard let baseURLString = youtubeBaseURL,
-              let baseURL = URL(string: baseURLString) else {return}
-        let fullURL = baseURL.appending(path: videoID)
-        webView.load(URLRequest(url: fullURL))
+
+    func updateUIViewController(_ uiViewController: SFSafariViewController, context: Context) {}
+}
+
+struct YoutubePlayer: View {
+    let videoID: String
+    @State private var showTrailer = false
+
+    var body: some View {
+        ZStack {
+            AsyncImage(url: URL(string: "https://img.youtube.com/vi/\(videoID)/hqdefault.jpg")) { image in
+                image
+                    .resizable()
+                    .scaledToFit()
+            } placeholder: {
+                Rectangle()
+                    .fill(.black)
+                    .overlay { ProgressView() }
+            }
+
+            Button {
+                showTrailer = true
+            } label: {
+                Image(systemName: "play.circle.fill")
+                    .font(.system(size: 64))
+                    .foregroundStyle(.white.opacity(0.9))
+                    .shadow(radius: 5)
+            }
+        }
+        .fullScreenCover(isPresented: $showTrailer) {
+            if let url = URL(string: "https://www.youtube.com/watch?v=\(videoID)") {
+                SafariView(url: url)
+                    .ignoresSafeArea()
+            }
+        }
     }
 }

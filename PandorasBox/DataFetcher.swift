@@ -10,8 +10,6 @@ import Foundation
 struct DataFetcher{
     let tmdbBaseURL = APIConfig.shared?.tmdbBaseURL
     let tmdbAPIKey = APIConfig.shared?.tmdbAPIKey
-    let youtubeSearchURL = APIConfig.shared?.youtubeSearchURL
-    let youtubeAPIKey = APIConfig.shared?.youtubeAPIKey
     
     
     func fetchTitles(for media:String, by type:String, with title:String? = nil) async throws -> [Title] {
@@ -23,33 +21,36 @@ struct DataFetcher{
     
         print(fetchTitlesURL)
         var titles = try await fetchAndDecode(url: fetchTitlesURL, type: TMDBAPIObject.self).results
-        
-                Constants.addPosterPath(to: &titles)
+
+        Constants.addPosterPath(to: &titles)
+        for title in titles {
+            if title.mediaType == nil {
+                title.mediaType = media
+            }
+        }
         return titles 
     }
     
     
-    func fetchVideoID(for title: String) async throws -> String {
-        guard let baseSearchURL = youtubeSearchURL else {
+    func fetchTrailerID(for titleId: Int, mediaType: String) async throws -> String {
+        guard let baseURL = tmdbBaseURL else {
             throw NetworkError.missingConfig
         }
-        
-        guard let searchAPIKey = youtubeAPIKey else {
+        guard let apiKey = tmdbAPIKey else {
             throw NetworkError.missingConfig
         }
-        
-        let trailerSearch = title + YoutubeURLStrings.space.rawValue + YoutubeURLStrings.trailer.rawValue
-        
-        guard let fetchVideoURL = URL(string: baseSearchURL)?.appending(queryItems:[
-            URLQueryItem(name: YoutubeURLStrings.queryShorten.rawValue, value: trailerSearch),
-            URLQueryItem(name: YoutubeURLStrings.key.rawValue, value: searchAPIKey)
-        ]) else {
+
+        let path = "3/\(mediaType)/\(titleId)/videos"
+        guard let url = URL(string: baseURL)?
+            .appending(path: path)
+            .appending(queryItems: [URLQueryItem(name: "api_key", value: apiKey)]) else {
             throw NetworkError.urlBuildFailed
         }
-        
-        print(fetchVideoURL)
-        
-        return try await fetchAndDecode(url: fetchVideoURL, type: YoutubeSearchResponse.self).items?.first?.id?.videoId ?? ""
+
+        let response = try await fetchAndDecode(url: url, type: TMDBVideoResponse.self)
+        let trailer = response.results.first { $0.site == "YouTube" && $0.type == "Trailer" }
+            ?? response.results.first { $0.site == "YouTube" }
+        return trailer?.key ?? ""
     }
     
     func fetchAndDecode<T:Decodable>(url:URL, type: T.Type) async throws -> T {

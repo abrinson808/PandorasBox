@@ -1,7 +1,4 @@
 {
     "tmdbBaseURL": "YOUR_TMDB_BASE_URL",
-    "tmdbAPIKey": "YOUR_TMDB_API_KEY",
-    "youtubeBaseURL": "YOUR_YOUTUBE_BASE_URL",
-    "youtubeAPIKey": "YOUR_YOUTUBE_API_KEY",
-    "youtubeSearchURL": "YOUR_YOUTUBE_SEARCH_URL"
+    "tmdbAPIKey": "YOUR_TMDB_API_KEY"
 }

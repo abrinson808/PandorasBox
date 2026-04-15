@@ -56,11 +56,11 @@ class ViewModel {
         }
     }
     
-    func getVideoId(for title: String) async {
+    func getVideoId(for titleId: Int, mediaType: String) async {
         videoIdStatus = .fetching
-        
+
         do{
-            videoId = try await dataFetcher.fetchVideoID(for: title)
+            videoId = try await dataFetcher.fetchTrailerID(for: titleId, mediaType: mediaType)
             videoIdStatus = .success
         } catch {
             print(error)

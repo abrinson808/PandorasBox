@@ -19,23 +19,26 @@ class Title: Decodable, Identifiable, Hashable {
     var name: String?
     var overview: String?
     var posterPath: String?
-    
-    init(id: Int?, title: String?, name: String?, overview: String?, posterPath: String?) {
+    var mediaType: String?
+
+    init(id: Int?, title: String?, name: String?, overview: String?, posterPath: String?, mediaType: String? = nil) {
         self.id = id
         self.title = title
         self.name = name
         self.overview = overview
         self.posterPath = posterPath
+        self.mediaType = mediaType
     }
-    
+
     enum CodingKeys: CodingKey {
         case id
         case title
         case name
         case overview
         case posterPath
+        case mediaType
     }
-    
+
     required init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decodeIfPresent(Int.self, forKey: .id)
@@ -43,6 +46,7 @@ class Title: Decodable, Identifiable, Hashable {
         name = try container.decodeIfPresent(String.self, forKey: .name)
         overview = try container.decodeIfPresent(String.self, forKey: .overview)
         posterPath = try container.decodeIfPresent(String.self, forKey: .posterPath)
+        mediaType = try container.decodeIfPresent(String.self, forKey: .mediaType)
     }
     
     static var previewTitles = [

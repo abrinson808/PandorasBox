@@ -7,14 +7,12 @@
 
 import Foundation
 
-struct YoutubeSearchResponse: Codable {
-    let items: [ItemProperties]?
+struct TMDBVideoResponse: Codable {
+    let results: [TMDBVideo]
 }
 
-struct ItemProperties: Codable {
-    let id: IdProperties?
-}
-
-struct IdProperties: Codable {
-    let videoId: String?
+struct TMDBVideo: Codable {
+    let key: String
+    let site: String
+    let type: String
 }
