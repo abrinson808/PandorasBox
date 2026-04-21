@@ -11,12 +11,13 @@ import SwiftData
 struct TitleDetailView: View {
     @Environment(\.dismiss) var dismiss
     let title: Title
-    var showDownloadButton: Bool = true
+    var showWatchlistButton: Bool = true
     var titleName : String {
         return(title.name ?? title.title) ?? ""
     }
     let viewModel = ViewModel()
     @Environment(\.modelContext) var modelContext
+    @State private var selectedSimilarTitle: Title?
     
     var body: some View {
         GeometryReader{ geometry in
@@ -41,7 +42,142 @@ struct TitleDetailView: View {
                         Text(title.overview ?? "")
                             .padding(5)
                         
-                        if showDownloadButton{
+                        // MARK: - Genres + Rating
+                        if !viewModel.genres.isEmpty {
+                            HStack {
+                                ForEach(viewModel.genres) { genre in
+                                    Text(genre.name)
+                                        .font(.caption)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 4)
+                                        .background(.ultraThinMaterial)
+                                        .clipShape(Capsule())
+                                }
+
+                                Spacer()
+
+                                HStack(spacing: 4) {
+                                    Image(systemName: "star.fill")
+                                        .foregroundStyle(.yellow)
+                                    Text(String(format: "%.1f", viewModel.voteAverage))
+                                        .bold()
+                                }
+                            }
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 8)
+                        }
+                        
+                        // MARK: - Top Billed Cast
+                        if !viewModel.cast.isEmpty {
+                            VStack(alignment: .leading) {
+                                Text(Constants.castHeaderString)
+                                    .font(.title2)
+                                    .bold()
+                                    .padding(.horizontal, 5)
+
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    LazyHStack(spacing: 16) {
+                                        ForEach(viewModel.cast) { member in
+                                            VStack {
+                                                if let profilePath = member.profilePath {
+                                                    AsyncImage(url: URL(string: Constants.profileImageURLStart + profilePath)) { image in
+                                                        image
+                                                            .resizable()
+                                                            .scaledToFill()
+                                                    } placeholder: {
+                                                        Image(systemName: "person.circle.fill")
+                                                            .resizable()
+                                                            .foregroundStyle(.gray)
+                                                    }
+                                                    .frame(width: 80, height: 80)
+                                                    .clipShape(Circle())
+                                                } else {
+                                                    Image(systemName: "person.circle.fill")
+                                                        .resizable()
+                                                        .foregroundStyle(.gray)
+                                                        .frame(width: 80, height: 80)
+                                                }
+
+                                                Text(member.name)
+                                                    .font(.caption)
+                                                    .bold()
+                                                    .lineLimit(1)
+
+                                                Text(member.character ?? "")
+                                                    .font(.caption2)
+                                                    .foregroundStyle(.secondary)
+                                                    .lineLimit(1)
+                                            }
+                                            .frame(width: 90)
+                                        }
+                                    }
+                                    .padding(.horizontal, 5)
+                                }
+                            }
+                            .padding(.vertical, 8)
+                        }
+                        
+                        // MARK: - Where to Watch
+                        if let providers = viewModel.watchProviders {
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text(Constants.watchProvidersHeaderString)
+                                    .font(.title2)
+                                    .bold()
+                                    .padding(.horizontal, 5)
+
+                                if let streaming = providers.flatrate, !streaming.isEmpty {
+                                    providerRow(label: "Stream", providers: streaming)
+                                }
+                                if let rental = providers.rent, !rental.isEmpty {
+                                    providerRow(label: "Rent", providers: rental)
+                                }
+                                if let purchase = providers.buy, !purchase.isEmpty {
+                                    providerRow(label: "Buy", providers: purchase)
+                                }
+                            }
+                            .padding(.vertical, 8)
+                        }
+                        
+                        // MARK: - More Like This
+                        if !viewModel.similarTitles.isEmpty {
+                            VStack(alignment: .leading) {
+                                Text(Constants.similarHeaderString)
+                                    .font(.title2)
+                                    .bold()
+                                    .padding(.horizontal, 5)
+
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    LazyHStack(spacing: 12) {
+                                        ForEach(viewModel.similarTitles) { similarTitle in
+                                            AsyncImage(url: URL(string: Constants.posterURLStart + (similarTitle.posterPath ?? ""))) { image in
+                                                image
+                                                    .resizable()
+                                                    .scaledToFit()
+                                                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                                            } placeholder: {
+                                                ProgressView()
+                                            }
+                                            .frame(width: 120, height: 180)
+                                            .onTapGesture {
+                                                let newTitle = Title(
+                                                    id: similarTitle.id,
+                                                    title: similarTitle.title,
+                                                    name: similarTitle.name,
+                                                    overview: similarTitle.overview,
+                                                    posterPath: Constants.posterURLStart + (similarTitle.posterPath ?? ""),
+                                                    mediaType: similarTitle.mediaType ?? title.mediaType ?? "movie"
+                                                )
+                                                selectedSimilarTitle = newTitle
+                                            }
+                                        }
+                                    }
+                                    .padding(.horizontal, 5)
+                                }
+                            }
+                            .padding(.vertical, 8)
+                        }
+                        
+                        if showWatchlistButton{
                             HStack{
                                 Spacer()
                                 
@@ -52,7 +188,7 @@ struct TitleDetailView: View {
                                     try? modelContext.save()
                                     dismiss()
                                 } label : {
-                                    Text(Constants.downloadString)
+                                    Text(Constants.addToWatchlistString)
                                         .ghostButton()
                                 }
                                 
@@ -69,7 +205,53 @@ struct TitleDetailView: View {
         }
         .task {
             if let titleId = title.id {
-                await viewModel.getVideoId(for: titleId, mediaType: title.mediaType ?? "movie")
+                let mediaType = title.mediaType ?? "movie"
+                async let videoFetch: () = viewModel.getVideoId(for: titleId, mediaType: mediaType)
+                async let detailFetch: () = viewModel.getTitleDetail(for: titleId, mediaType: mediaType)
+                _ = await (videoFetch, detailFetch)
+            }
+        }
+        .navigationDestination(item: $selectedSimilarTitle) { title in
+            TitleDetailView(title: title)
+        }
+    }
+    
+    @ViewBuilder
+    private func providerRow(label: String, providers: [WatchProvider]) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(label)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 5)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: 12) {
+                    ForEach(providers) { provider in
+                        VStack {
+                            if let logoPath = provider.logoPath {
+                                AsyncImage(url: URL(string: Constants.logoImageURLStart + logoPath)) { image in
+                                    image.resizable().scaledToFit()
+                                } placeholder: {
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(.gray.opacity(0.3))
+                                }
+                                .frame(width: 48, height: 48)
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                            } else {
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(.gray.opacity(0.3))
+                                    .frame(width: 48, height: 48)
+                            }
+
+                            Text(provider.providerName)
+                                .font(.caption2)
+                                .lineLimit(2)
+                                .multilineTextAlignment(.center)
+                        }
+                        .frame(width: 60)
+                    }
+                }
+                .padding(.horizontal, 5)
             }
         }
     }

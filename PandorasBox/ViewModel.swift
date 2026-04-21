@@ -18,6 +18,7 @@ class ViewModel {
     private(set) var homeStatus: FetchStatus = .notStarted
     private(set) var videoIdStatus: FetchStatus = .notStarted
     private(set) var upcomingStatus: FetchStatus = .notStarted
+    private(set) var detailStatus: FetchStatus = .notStarted
     
     private let dataFetcher = DataFetcher()
     var trendingMovies: [Title] = []
@@ -27,6 +28,12 @@ class ViewModel {
     var upcomingMovies: [Title] = []
     var heroTitle = Title.previewTitles[0]
     var videoId = ""
+    
+    var genres: [Genre] = []
+    var voteAverage: Double = 0.0
+    var cast: [CastMember] = []
+    var watchProviders: WatchProviderCountry?
+    var similarTitles: [SimilarTitle] = []
             
     func getTitles() async {
         homeStatus = .fetching
@@ -65,6 +72,25 @@ class ViewModel {
         } catch {
             print(error)
             videoIdStatus = .failed(underlyingError: error)
+        }
+    }
+    
+    func getTitleDetail(for titleId: Int, mediaType: String) async {
+        detailStatus = .fetching
+
+        do {
+            let detail = try await dataFetcher.fetchTitleDetail(for: titleId, mediaType: mediaType)
+
+            genres = detail.genres
+            voteAverage = detail.voteAverage
+            cast = Array(detail.credits.cast.prefix(10))
+            watchProviders = detail.watchProviders.results["US"]
+            similarTitles = detail.similar.results
+
+            detailStatus = .success
+        } catch {
+            print(error)
+            detailStatus = .failed(underlyingError: error)
         }
     }
     

@@ -53,6 +53,27 @@ struct DataFetcher{
         return trailer?.key ?? ""
     }
     
+    func fetchTitleDetail(for titleId: Int, mediaType: String) async throws -> TitleDetailResponse {
+        guard let baseURL = tmdbBaseURL else {
+            throw NetworkError.missingConfig
+        }
+        guard let apiKey = tmdbAPIKey else {
+            throw NetworkError.missingConfig
+        }
+
+        let path = "3/\(mediaType)/\(titleId)"
+        guard let url = URL(string: baseURL)?
+            .appending(path: path)
+            .appending(queryItems: [
+                URLQueryItem(name: "api_key", value: apiKey),
+                URLQueryItem(name: "append_to_response", value: "credits,watch/providers,similar")
+            ]) else {
+            throw NetworkError.urlBuildFailed
+        }
+
+        return try await fetchAndDecode(url: url, type: TitleDetailResponse.self)
+    }
+    
     func fetchAndDecode<T:Decodable>(url:URL, type: T.Type) async throws -> T {
         let (data,urlResponse) = try await URLSession.shared.data(from: url)
         

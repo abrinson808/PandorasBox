@@ -41,22 +41,8 @@ struct HomeView: View {
                                 ProgressView()
                             }
                             .frame(width: geo.size.width, height: geo.size.height * 0.85)
-                           
-                            HStack{
-                                Button{
-                                    titleDetailPath.append(viewModel.heroTitle)
-                                } label: {
-                                    Text(Constants.playString)
-                                        .ghostButton()
-                                }
-                                
-                                Button{
-                                    modelContext.insert(viewModel.heroTitle)
-                                    try? modelContext.save()
-                                } label: {
-                                    Text(Constants.downloadString)
-                                        .ghostButton()
-                                }
+                            .onTapGesture {
+                                titleDetailPath.append(viewModel.heroTitle)
                             }
                             
                             HorizontalListView(header: Constants.trendingMoviesString, titles: viewModel.trendingMovies) { title in

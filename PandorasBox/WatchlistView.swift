@@ -8,14 +8,14 @@
 import SwiftUI
 import SwiftData
 
-struct DownloadView: View {
+struct WatchlistView: View {
     @Query(sort: \Title.title) var savedTitles: [Title]
     @State private var navigationPath = NavigationPath()
     
     var body: some View {
         NavigationStack(path: $navigationPath){
             if savedTitles.isEmpty {
-                Text("No Downloads")
+                Text("Your Watchlist is Empty")
                     .padding()
                     .font(.title3)
                     .bold()
@@ -27,5 +27,5 @@ struct DownloadView: View {
 }
 
 #Preview {
-    DownloadView()
+    WatchlistView()
 }
