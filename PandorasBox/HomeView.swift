@@ -29,7 +29,7 @@ struct HomeView: View {
                             AsyncImage(url: URL(string: viewModel.heroTitle.posterPath ?? "")){ image in
                                 image
                                     .resizable()
-                                    .scaledToFit()
+                                    .scaledToFill()
                                     .overlay {
                                         LinearGradient(
                                             stops: [Gradient.Stop(color: .clear, location: 0.8),
@@ -65,11 +65,16 @@ struct HomeView: View {
                             .frame(width: geo.size.width, height: geo.size.height)
                     }
                 }
+                .ignoresSafeArea(edges: .top)
+                
                 .task{
                     await viewModel.getTitles()
                 }
                 .navigationDestination(for: Title.self) { title in
                     TitleDetailView(title: title)
+                }
+                .navigationDestination(for: CastMember.self) { member in
+                    ArtistDetailView(castMember: member)
                 }
             }
         }

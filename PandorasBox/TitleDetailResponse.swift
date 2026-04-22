@@ -35,7 +35,7 @@ struct Credits: Decodable {
     let cast: [CastMember]
 }
 
-struct CastMember: Decodable, Identifiable {
+struct CastMember: Decodable, Identifiable, Hashable {
     let id: Int
     let name: String
     let character: String?

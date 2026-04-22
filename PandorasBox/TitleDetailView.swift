@@ -77,37 +77,40 @@ struct TitleDetailView: View {
                                 ScrollView(.horizontal, showsIndicators: false) {
                                     LazyHStack(spacing: 16) {
                                         ForEach(viewModel.cast) { member in
-                                            VStack {
-                                                if let profilePath = member.profilePath {
-                                                    AsyncImage(url: URL(string: Constants.profileImageURLStart + profilePath)) { image in
-                                                        image
-                                                            .resizable()
-                                                            .scaledToFill()
-                                                    } placeholder: {
+                                            NavigationLink(value: member) {
+                                                VStack {
+                                                    if let profilePath = member.profilePath {
+                                                        AsyncImage(url: URL(string: Constants.profileImageURLStart + profilePath)) { image in
+                                                            image
+                                                                .resizable()
+                                                                .scaledToFill()
+                                                        } placeholder: {
+                                                            Image(systemName: "person.circle.fill")
+                                                                .resizable()
+                                                                .foregroundStyle(.gray)
+                                                        }
+                                                        .frame(width: 80, height: 80)
+                                                        .clipShape(Circle())
+                                                    } else {
                                                         Image(systemName: "person.circle.fill")
                                                             .resizable()
                                                             .foregroundStyle(.gray)
+                                                            .frame(width: 80, height: 80)
                                                     }
-                                                    .frame(width: 80, height: 80)
-                                                    .clipShape(Circle())
-                                                } else {
-                                                    Image(systemName: "person.circle.fill")
-                                                        .resizable()
-                                                        .foregroundStyle(.gray)
-                                                        .frame(width: 80, height: 80)
+                                                    
+                                                    Text(member.name)
+                                                        .font(.caption)
+                                                        .bold()
+                                                        .lineLimit(1)
+                                                    
+                                                    Text(member.character ?? "")
+                                                        .font(.caption2)
+                                                        .foregroundStyle(.secondary)
+                                                        .lineLimit(1)
                                                 }
-
-                                                Text(member.name)
-                                                    .font(.caption)
-                                                    .bold()
-                                                    .lineLimit(1)
-
-                                                Text(member.character ?? "")
-                                                    .font(.caption2)
-                                                    .foregroundStyle(.secondary)
-                                                    .lineLimit(1)
+                                                .frame(width: 90)
                                             }
-                                            .frame(width: 90)
+                                            .buttonStyle(.plain)
                                         }
                                     }
                                     .padding(.horizontal, 5)

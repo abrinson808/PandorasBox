@@ -19,6 +19,7 @@ class ViewModel {
     private(set) var videoIdStatus: FetchStatus = .notStarted
     private(set) var upcomingStatus: FetchStatus = .notStarted
     private(set) var detailStatus: FetchStatus = .notStarted
+    private(set) var personDetailStatus: FetchStatus = .notStarted
     
     private let dataFetcher = DataFetcher()
     var trendingMovies: [Title] = []
@@ -34,6 +35,9 @@ class ViewModel {
     var cast: [CastMember] = []
     var watchProviders: WatchProviderCountry?
     var similarTitles: [SimilarTitle] = []
+    var personDetail: PersonDetailResponse?
+    var mostRecentCredit: PersonCredit?
+    var personVideoId: String = ""
             
     func getTitles() async {
         homeStatus = .fetching
@@ -91,6 +95,29 @@ class ViewModel {
         } catch {
             print(error)
             detailStatus = .failed(underlyingError: error)
+        }
+    }
+    
+    func getPersonDetail(for personId: Int) async {
+        personDetailStatus = .fetching
+        
+        do {
+            let detail = try await dataFetcher.fetchPersonDetail(for: personId)
+            personDetail = detail
+            let allCredits = (detail.combinedCredits.cast ?? []) + (detail.combinedCredits.crew ?? [])
+            mostRecentCredit = allCredits
+                .sorted {$0.sortDate > $1.sortDate}
+                .first
+            
+            if let credit = mostRecentCredit {
+                personVideoId = try await dataFetcher.fetchTrailerID(
+                    for: credit.id,
+                    mediaType: credit.mediaType ?? "movie")
+            }
+            personDetailStatus = .success
+        } catch {
+            print(error)
+            personDetailStatus = .failed(underlyingError: error)
         }
     }
     

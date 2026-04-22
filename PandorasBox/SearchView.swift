@@ -69,6 +69,9 @@ struct SearchView: View {
             .navigationDestination(for: Title.self) { title in
                 TitleDetailView(title: title)
             }
+            .navigationDestination(for: CastMember.self) { member in
+                ArtistDetailView(castMember: member)
+            }
         }
     }
 }
