@@ -17,7 +17,6 @@ struct TitleDetailView: View {
     }
     let viewModel = ViewModel()
     @Environment(\.modelContext) var modelContext
-    @State private var selectedSimilarTitle: Title?
     
     var body: some View {
         GeometryReader{ geometry in
@@ -149,25 +148,23 @@ struct TitleDetailView: View {
                                 ScrollView(.horizontal, showsIndicators: false) {
                                     LazyHStack(spacing: 12) {
                                         ForEach(viewModel.similarTitles) { similarTitle in
-                                            AsyncImage(url: URL(string: Constants.posterURLStart + (similarTitle.posterPath ?? ""))) { image in
-                                                image
-                                                    .resizable()
-                                                    .scaledToFit()
-                                                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                                            } placeholder: {
-                                                ProgressView()
-                                            }
-                                            .frame(width: 120, height: 180)
-                                            .onTapGesture {
-                                                let newTitle = Title(
-                                                    id: similarTitle.id,
-                                                    title: similarTitle.title,
-                                                    name: similarTitle.name,
-                                                    overview: similarTitle.overview,
-                                                    posterPath: Constants.posterURLStart + (similarTitle.posterPath ?? ""),
-                                                    mediaType: similarTitle.mediaType ?? title.mediaType ?? "movie"
-                                                )
-                                                selectedSimilarTitle = newTitle
+                                            NavigationLink(value: Title(
+                                                id: similarTitle.id,
+                                                title: similarTitle.title,
+                                                name: similarTitle.name,
+                                                overview: similarTitle.overview,
+                                                posterPath: Constants.posterURLStart + (similarTitle.posterPath ?? ""),
+                                                mediaType: similarTitle.mediaType ?? title.mediaType ?? "movie"
+                                            )) {
+                                                AsyncImage(url: URL(string: Constants.posterURLStart + (similarTitle.posterPath ?? ""))) { image in
+                                                    image
+                                                        .resizable()
+                                                        .scaledToFit()
+                                                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                                                } placeholder: {
+                                                    ProgressView()
+                                                }
+                                                .frame(width: 120, height: 180)
                                             }
                                         }
                                     }
@@ -210,9 +207,6 @@ struct TitleDetailView: View {
                 async let detailFetch: () = viewModel.getTitleDetail(for: titleId, mediaType: mediaType)
                 _ = await (videoFetch, detailFetch)
             }
-        }
-        .navigationDestination(item: $selectedSimilarTitle) { title in
-            TitleDetailView(title: title)
         }
     }
     

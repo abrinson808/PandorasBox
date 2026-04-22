@@ -28,6 +28,7 @@ struct UpcomingView: View {
                         .frame(width: geo.size.width, height: geo.size.height)
                 }
             }
+            .navigationTitle("What's Next?")
             .task {
                 await viewModel.getUpcomingMovies()
             }
