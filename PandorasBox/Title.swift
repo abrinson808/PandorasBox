@@ -20,14 +20,23 @@ class Title: Decodable, Identifiable, Hashable {
     var overview: String?
     var posterPath: String?
     var mediaType: String?
+    var isWatched: Bool = false
 
-    init(id: Int?, title: String?, name: String?, overview: String?, posterPath: String?, mediaType: String? = nil) {
+    init(id: Int?,
+         title: String?,
+         name: String?,
+         overview: String?,
+         posterPath: String?,
+         mediaType: String? = nil,
+         isWatched: Bool = false
+    ) {
         self.id = id
         self.title = title
         self.name = name
         self.overview = overview
         self.posterPath = posterPath
         self.mediaType = mediaType
+        self.isWatched = isWatched
     }
 
     enum CodingKeys: CodingKey {

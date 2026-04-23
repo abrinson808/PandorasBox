@@ -86,8 +86,8 @@ struct DataFetcher{
         guard let url = URL(string: baseURL)?
             .appending(path: path)
             .appending(queryItems: [
-                URLQueryItem(name: "api_Key", value: apiKey),
-                URLQueryItem(name: "append_to_response", value: "combined credits")
+                URLQueryItem(name: "api_key", value: apiKey),
+                URLQueryItem(name: "append_to_response", value: "combined_credits")
             ]) else {
             throw NetworkError.urlBuildFailed
         }
