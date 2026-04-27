@@ -7,23 +7,28 @@
 
 import SwiftUI
 
+enum AppTab: Hashable {
+    case home, upcoming, watchlist, search
+}
+
 struct ContentView: View {
+    @State private var selectedTab: AppTab = .home
+
     var body: some View {
-        TabView{
-            Tab(Constants.homeString,systemImage: Constants.homeIconString){
+        TabView(selection: $selectedTab) {
+            Tab(Constants.homeString, systemImage: Constants.homeIconString, value: .home) {
                 HomeView()
             }
-            Tab(Constants.upcomingString,systemImage: Constants.upcomingIconString){
+            Tab(Constants.upcomingString, systemImage: Constants.upcomingIconString, value: .upcoming) {
                 UpcomingView()
             }
-            Tab(Constants.searchString,systemImage: Constants.searchIconString){
-               SearchView()
-            }
-            Tab(Constants.watchlistString,systemImage: Constants.watchlistIconString){
+            Tab(Constants.watchlistString, systemImage: Constants.watchlistIconString, value: .watchlist) {
                 WatchlistView()
             }
+            Tab(value: .search, role: .search) {
+                SearchView()
+            }
         }
-        
     }
 }
 

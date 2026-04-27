@@ -12,6 +12,7 @@ struct WatchlistView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Title.title) private var savedTitles: [Title]
     @State private var navigationPath = NavigationPath()
+    let viewModel = ViewModel()
 
     private var watchMeTitles: [Title] {
         savedTitles.filter { !$0.isWatched }
@@ -58,10 +59,44 @@ struct WatchlistView: View {
                                 }
                             }
                         }
+
+                        if !viewModel.suggestions.isEmpty {
+                            Section("Suggestions for You") {
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    LazyHStack(spacing: 12) {
+                                        ForEach(viewModel.suggestions) { suggestion in
+                                            NavigationLink(value: Title(
+                                                id: suggestion.id,
+                                                title: suggestion.title,
+                                                name: suggestion.name,
+                                                overview: suggestion.overview,
+                                                posterPath: Constants.posterURLStart + (suggestion.posterPath ?? ""),
+                                                mediaType: suggestion.mediaType ?? "movie"
+                                            )) {
+                                                AsyncImage(url: URL(string: Constants.posterURLStart + (suggestion.posterPath ?? ""))) { image in
+                                                    image
+                                                        .resizable()
+                                                        .scaledToFit()
+                                                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                                                } placeholder: {
+                                                    ProgressView()
+                                                }
+                                                .frame(width: 100, height: 150)
+                                            }
+                                        }
+                                    }
+                                    .padding(.vertical, 8)
+                                }
+                                .listRowInsets(EdgeInsets())
+                            }
+                        }
                     }
                 }
             }
             .navigationTitle("Watchlist")
+                .task(id: savedTitles.count) {
+                    await viewModel.getSuggestions(from: savedTitles)
+            }
             .navigationDestination(for: Title.self) { title in
                 TitleDetailView(title: title, showWatchlistButton: false)
             }
@@ -114,12 +149,12 @@ private struct WatchlistRow: View {
                                     .foregroundStyle(.secondary)
                             }
                     }
-                    .frame(width: 50, height: 74)
+                    .frame(width: 40, height: 60)
                     .clipShape(RoundedRectangle(cornerRadius: 6))
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text(titleName)
-                            .font(.headline)
+                            .font(.subheadline)
                             .strikethrough(title.isWatched)
                             .foregroundStyle(title.isWatched ? .secondary : .primary)
                             .lineLimit(2)
@@ -129,7 +164,6 @@ private struct WatchlistRow: View {
                             .foregroundStyle(.secondary)
                     }
                 }
-                .padding(.vertical, 4)
             }
         }
     }

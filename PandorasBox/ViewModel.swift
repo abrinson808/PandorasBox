@@ -20,6 +20,7 @@ class ViewModel {
     private(set) var upcomingStatus: FetchStatus = .notStarted
     private(set) var detailStatus: FetchStatus = .notStarted
     private(set) var personDetailStatus: FetchStatus = .notStarted
+    private(set) var suggestionsStatus: FetchStatus = .notStarted
     
     private let dataFetcher = DataFetcher()
     var trendingMovies: [Title] = []
@@ -38,6 +39,7 @@ class ViewModel {
     var personDetail: PersonDetailResponse?
     var mostRecentCredit: PersonCredit?
     var personVideoId: String = ""
+    var suggestions: [SimilarTitle] = []
             
     func getTitles() async {
         homeStatus = .fetching
@@ -95,6 +97,43 @@ class ViewModel {
         } catch {
             print(error)
             detailStatus = .failed(underlyingError: error)
+        }
+    }
+    
+    func getSuggestions(from savedTitles: [Title]) async {
+        suggestionsStatus = .fetching
+        
+        guard !savedTitles.isEmpty else {
+            suggestionsStatus = .success
+            return
+        }
+        
+        do {
+            // Pick up to 3 random titles from the watchlist to base suggestions on
+            let sampleTitles = Array(savedTitles.shuffled().prefix(3))
+            var allSuggestions: [SimilarTitle] = []
+            
+            for title in sampleTitles {
+                guard let titleId = title.id else { continue }
+                let mediaType = title.mediaType ?? "movie"
+                let similar = try await dataFetcher.fetchSimilarTitles(for: titleId, mediaType: mediaType)
+                allSuggestions.append(contentsOf: similar)
+            }
+            
+            // Remove duplicates and titles already in the watchlist
+            let savedIds = Set(savedTitles.compactMap { $0.id })
+            var seenIds = Set<Int>()
+            suggestions = allSuggestions.filter { title in
+                let isNew = !savedIds.contains(title.id) && !seenIds.contains(title.id)
+                seenIds.insert(title.id)
+                return isNew
+            }
+            .shuffled()
+            
+            suggestionsStatus = .success
+        } catch {
+            print(error)
+            suggestionsStatus = .failed(underlyingError: error)
         }
     }
     

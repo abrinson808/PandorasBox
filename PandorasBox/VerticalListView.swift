@@ -15,9 +15,7 @@ struct VerticalListView: View {
     
     var body: some View {
         List(titles) { title in
-            NavigationLink {
-                TitleDetailView(title: title, showWatchlistButton: !canDelete)
-            } label: {
+            NavigationLink(value: title) {
                 AsyncImage(url: URL(string: title.posterPath ?? "")) { image in
                     HStack{
                         image

@@ -15,8 +15,13 @@ struct TitleDetailView: View {
     var titleName : String {
         return(title.name ?? title.title) ?? ""
     }
+    private var isInWatchlist: Bool {
+        guard let titleId = title.id else { return false }
+        return savedTitles.contains(where: { $0.id == titleId })
+    }
     let viewModel = ViewModel()
     @Environment(\.modelContext) var modelContext
+    @Query private var savedTitles: [Title]
     
     var body: some View {
         GeometryReader{ geometry in
@@ -176,25 +181,6 @@ struct TitleDetailView: View {
                             }
                             .padding(.vertical, 8)
                         }
-                        
-                        if showWatchlistButton{
-                            HStack{
-                                Spacer()
-                                
-                                Button {
-                                    let saveTitle = title
-                                    saveTitle.title = titleName
-                                    modelContext.insert(saveTitle)
-                                    try? modelContext.save()
-                                    dismiss()
-                                } label : {
-                                    Text(Constants.addToWatchlistString)
-                                        .ghostButton()
-                                }
-                                
-                                Spacer()
-                            }
-                        }
                     }
                 }
             case .failed(let underlyingError):
@@ -211,6 +197,30 @@ struct TitleDetailView: View {
                 _ = await (videoFetch, detailFetch)
             }
         }
+            .toolbar {
+                if showWatchlistButton {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            if isInWatchlist {
+                                if let titleId = title.id,
+                                   let existing = savedTitles.first(where: { $0.id == titleId }) {
+                                    modelContext.delete(existing)
+                                    try? modelContext.save()
+                                }
+                                return
+                            }
+                            let saveTitle = title
+                            saveTitle.title = titleName
+                            modelContext.insert(saveTitle)
+                            try? modelContext.save()
+                        } label: {
+                            Image(systemName: isInWatchlist ? "bookmark.fill" : "bookmark")
+                                .font(.title3)
+                        }
+                    }
+                }
+            }
+        }   // ← line 214, end of body
     }
     
     @ViewBuilder
@@ -252,8 +262,6 @@ struct TitleDetailView: View {
             }
         }
     }
-}
-
 #Preview {
     TitleDetailView(title: Title.previewTitles[0])
 }

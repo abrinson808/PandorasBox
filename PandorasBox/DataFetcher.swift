@@ -94,6 +94,27 @@ struct DataFetcher{
         return try await fetchAndDecode(url: url, type: PersonDetailResponse.self)
     }
     
+    func fetchSimilarTitles(for titleId: Int, mediaType: String) async throws -> [SimilarTitle] {
+        guard let baseURL = tmdbBaseURL else {
+            throw NetworkError.missingConfig
+        }
+        guard let apiKey = tmdbAPIKey else {
+            throw NetworkError.missingConfig
+        }
+
+        let path = "3/\(mediaType)/\(titleId)/similar"
+        guard let url = URL(string: baseURL)?
+            .appending(path: path)
+            .appending(queryItems: [
+                URLQueryItem(name: "api_key", value: apiKey)
+            ]) else {
+            throw NetworkError.urlBuildFailed
+        }
+
+        let result = try await fetchAndDecode(url: url, type: SimilarResult.self)
+        return result.results
+    }
+    
     func fetchAndDecode<T:Decodable>(url:URL, type: T.Type) async throws -> T {
         let (data,urlResponse) = try await URLSession.shared.data(from: url)
         
