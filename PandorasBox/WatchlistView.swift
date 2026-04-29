@@ -12,20 +12,25 @@ struct WatchlistView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Title.title) private var savedTitles: [Title]
     @State private var navigationPath = NavigationPath()
+    @State private var showFavorites = false
     let viewModel = ViewModel()
 
     private var watchMeTitles: [Title] {
-        savedTitles.filter { !$0.isWatched }
+        savedTitles.filter { $0.isBookmarked && !$0.isWatched }
     }
 
     private var alreadyWatchedTitles: [Title] {
-        savedTitles.filter { $0.isWatched }
+        savedTitles.filter { $0.isBookmarked && $0.isWatched }
+    }
+    
+    private var favoriteTitles: [Title] {
+        savedTitles.filter { $0.isFavorite}
     }
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
             Group {
-                if savedTitles.isEmpty {
+                if watchMeTitles.isEmpty && alreadyWatchedTitles.isEmpty {
                     Text("Your Watchlist is Empty")
                         .padding()
                         .font(.title3)
@@ -94,6 +99,19 @@ struct WatchlistView: View {
                 }
             }
             .navigationTitle("Watchlist")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing){
+                    Button {
+                        showFavorites = true
+                    } label: {
+                        Image(systemName: favoriteTitles.isEmpty ? "heart" : "heart.fill")
+                            .foregroundStyle(favoriteTitles.isEmpty ? Color.secondary : Color.red)
+                    }
+                }
+            }
+            .navigationDestination(isPresented: $showFavorites) {
+                FavoritesListView(favorites: favoriteTitles)
+            }
                 .task(id: savedTitles.count) {
                     await viewModel.getSuggestions(from: savedTitles)
             }
@@ -169,6 +187,58 @@ private struct WatchlistRow: View {
     }
 }
 
+private struct FavoritesListView: View {
+    let favorites: [Title]
+
+    var body: some View {
+        Group {
+            if favorites.isEmpty {
+                ContentUnavailableView(
+                    "No Favorites Yet",
+                    systemImage: "heart.slash",
+                    description: Text("Tap the heart on a title's detail page to add it here")
+                )
+            } else {
+                List(favorites) { title in
+                    NavigationLink(value: title) {
+                        HStack(spacing: 12) {
+                            AsyncImage(url: URL(string: title.posterPath ?? "")) { image in
+                                image
+                                    .resizable()
+                                    .scaledToFill()
+                            } placeholder: {
+                                RoundedRectangle(cornerRadius: 6)
+                                    .fill(.gray.opacity(0.25))
+                                    .overlay {
+                                        Image(systemName: "film")
+                                            .foregroundStyle(.secondary)
+                                    }
+                            }
+                            .frame(width: 40, height: 60)
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text((title.name ?? title.title) ?? "Untitled")
+                                    .font(.subheadline)
+                                    .lineLimit(2)
+
+                                Text(title.mediaType == "tv" ? "TV Show" : "Movie")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+
+                            Spacer()
+
+                            Image(systemName: "heart.fill")
+                                .foregroundStyle(.red)
+                        }
+                    }
+                }
+            }
+        }
+        .navigationTitle("Favorites")
+    }
+}
 #Preview {
     WatchlistView()
 }

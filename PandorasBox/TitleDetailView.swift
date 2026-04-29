@@ -19,6 +19,10 @@ struct TitleDetailView: View {
         guard let titleId = title.id else { return false }
         return savedTitles.contains(where: { $0.id == titleId })
     }
+    private var savedTitle: Title? {
+        guard let titleId = title.id else { return nil }
+        return savedTitles.first(where: { $0.id == titleId })
+    }
     let viewModel = ViewModel()
     @Environment(\.modelContext) var modelContext
     @Query private var savedTitles: [Title]
@@ -37,11 +41,38 @@ struct TitleDetailView: View {
                         YoutubePlayer(videoID: viewModel.videoId)
                             .aspectRatio(1.3, contentMode: .fit)
                         
-                        Text(titleName)
-                            .bold()
-                            .font(.title2)
-                            .padding(5)
+                        HStack {
+                            Text(titleName)
+                                .bold()
+                                .font(.title2)
+                                
+                            Spacer()
                             
+                            Button {
+                                if let exsiting = savedTitle {
+                                    exsiting.isFavorite.toggle()
+                                    try? modelContext.save()
+                                } else {
+                                    let newTitle = Title(
+                                        id: title.id,
+                                        title: titleName,
+                                        name: title.name,
+                                        overview: title.overview,
+                                        posterPath: title.posterPath,
+                                        mediaType: title.mediaType,
+                                        isFavorite: true
+                                    )
+                                    modelContext.insert(newTitle)
+                                    try? modelContext.save()
+                                }
+                            } label : {
+                                Image(systemName: (savedTitle?.isFavorite ?? false) ? "heart.fill" : "heart")
+                                    .font(.title2)
+                                    .foregroundStyle((savedTitle?.isFavorite ?? false) ? .red : .secondary)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .padding(5)
         
                         Text(title.overview ?? "")
                             .padding(5)
@@ -201,20 +232,27 @@ struct TitleDetailView: View {
                 if showWatchlistButton {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button {
-                            if isInWatchlist {
-                                if let titleId = title.id,
-                                   let existing = savedTitles.first(where: { $0.id == titleId }) {
+                            if let existing = savedTitle {
+                                existing.isBookmarked.toggle()
+                                if !existing.isBookmarked && !existing.isFavorite {
                                     modelContext.delete(existing)
-                                    try? modelContext.save()
                                 }
-                                return
+                                try? modelContext.save()
+                            } else {
+                                let newTitle = Title(
+                                    id: title.id,
+                                    title: titleName,
+                                    name: title.name,
+                                    overview: title.overview,
+                                    posterPath: title.posterPath,
+                                    mediaType: title.mediaType,
+                                    isBookmarked: true
+                                )
+                                modelContext.insert(newTitle)
+                                try? modelContext.save()
                             }
-                            let saveTitle = title
-                            saveTitle.title = titleName
-                            modelContext.insert(saveTitle)
-                            try? modelContext.save()
                         } label: {
-                            Image(systemName: isInWatchlist ? "bookmark.fill" : "bookmark")
+                            Image(systemName: (savedTitle?.isBookmarked ?? false) ? "bookmark.fill" : "bookmark")
                                 .font(.title3)
                         }
                     }

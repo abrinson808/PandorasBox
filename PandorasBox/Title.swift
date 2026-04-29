@@ -21,6 +21,8 @@ class Title: Decodable, Identifiable, Hashable {
     var posterPath: String?
     var mediaType: String?
     var isWatched: Bool = false
+    var isFavorite: Bool = false
+    var isBookmarked: Bool = false
 
     init(id: Int?,
          title: String?,
@@ -28,7 +30,9 @@ class Title: Decodable, Identifiable, Hashable {
          overview: String?,
          posterPath: String?,
          mediaType: String? = nil,
-         isWatched: Bool = false
+         isWatched: Bool = false,
+         isFavorite: Bool = false,
+         isBookmarked: Bool = false
     ) {
         self.id = id
         self.title = title
@@ -37,6 +41,8 @@ class Title: Decodable, Identifiable, Hashable {
         self.posterPath = posterPath
         self.mediaType = mediaType
         self.isWatched = isWatched
+        self.isFavorite = isFavorite
+        self.isBookmarked = isBookmarked
     }
 
     enum CodingKeys: CodingKey {
