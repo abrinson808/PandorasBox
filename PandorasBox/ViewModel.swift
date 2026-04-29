@@ -28,6 +28,7 @@ class ViewModel {
     var topRatedMovies: [Title] = []
     var topRatedTV: [Title] = []
     var upcomingMovies: [Title] = []
+    var nowPlaying: [Title] = []
     var heroTitle = Title.previewTitles[0]
     var videoId = ""
     
@@ -50,11 +51,13 @@ class ViewModel {
                 async let tTV = dataFetcher.fetchTitles(for: "tv", by: "trending")
                 async let tRMovies = dataFetcher.fetchTitles(for: "movie", by: "top_rated")
                 async let tRTV = dataFetcher.fetchTitles(for: "tv", by: "top_rated")
+                async let nPlaying = dataFetcher.fetchTitles(for: "movie", by: "now_playing")
                 
                 trendingTV = try await tTV
                 trendingMovies = try await tMovies
                 topRatedTV = try await tRTV
                 topRatedMovies = try await tRMovies
+                nowPlaying = try await nPlaying
                 
                 if let title = trendingTV.randomElement() {
                     heroTitle = title

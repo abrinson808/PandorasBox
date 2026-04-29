@@ -45,16 +45,14 @@ struct HomeView: View {
                                 titleDetailPath.append(viewModel.heroTitle)
                             }
                             
+                            HorizontalListView(header: Constants.nowPlayingString, titles: viewModel.nowPlaying) { title in
+                                titleDetailPath.append(title)
+                            }
+                            
                             HorizontalListView(header: Constants.trendingMoviesString, titles: viewModel.trendingMovies) { title in
                                 titleDetailPath.append(title)
                             }
                             HorizontalListView(header: Constants.trendingTVString, titles: viewModel.trendingTV) { title in
-                                titleDetailPath.append(title)
-                            }
-                            HorizontalListView(header: Constants.topRatedMovieString, titles: viewModel.topRatedMovies) { title in
-                                titleDetailPath.append(title)
-                            }
-                            HorizontalListView(header: Constants.topRatedTVString, titles: viewModel.topRatedTV) { title in
                                 titleDetailPath.append(title)
                             }
                         }

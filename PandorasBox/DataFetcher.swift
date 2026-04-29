@@ -142,7 +142,7 @@ struct DataFetcher{
         
         if type == "trending" {
             path = "3/\(type)/\(media)/day"
-        } else if type == "top_rated" || type == "upcoming" {
+        } else if type == "top_rated" || type == "upcoming" || type == "now_playing" {
             path = "3/\(media)/\(type)"
         } else if type == "search" {
             path = "3/\(type)/\(media)"
