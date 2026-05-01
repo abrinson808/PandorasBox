@@ -10,7 +10,7 @@ import SwiftUI
 struct SearchView: View {
     @State private var searchByMovies = true
     @State private var searchText = ""
-    private let searchViewModel = SearchViewModel()
+    @State private var searchViewModel = SearchViewModel()
     @State private var navigationPath = NavigationPath()
     
     var body: some View {
@@ -29,19 +29,27 @@ struct SearchView: View {
                         AsyncImage(url: URL(string: title.posterPath ?? "")) {image in
                             image
                                 .resizable()
-                                .scaledToFit()
+                                .scaledToFill()
                                 .clipShape(.rect(cornerRadius: 10))
                         }placeholder: {
-                            ProgressView()
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(.gray.opacity(0.2))
                         }
                         .frame(width: 120, height: 200)
+                        .clipShape(.rect(cornerRadius: 10))
                         .onTapGesture {
                             navigationPath.append(title)
                         }
                     }
                 }
             }
+            .refreshable {
+                let media = searchByMovies ? "movie" : "tv"
+                let query = searchText
+                await searchViewModel.getSearchTitles(by: media, for: query)
+            }
             .navigationTitle(searchByMovies ? Constants.movieSearchString : Constants.tvSearchString)
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar{
                 ToolbarItem(placement: .topBarTrailing){
                     Button {
