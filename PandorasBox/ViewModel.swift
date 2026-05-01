@@ -104,6 +104,7 @@ class ViewModel {
     }
     
     func getSuggestions(from savedTitles: [Title]) async {
+        guard suggestions.isEmpty else { return }
         suggestionsStatus = .fetching
         
         guard !savedTitles.isEmpty else {
@@ -123,13 +124,17 @@ class ViewModel {
                 allSuggestions.append(contentsOf: similar)
             }
             
-            // Remove duplicates and titles already in the watchlist
             let savedIds = Set(savedTitles.compactMap { $0.id })
+            let cutoffYear = Calendar.current.component(.year, from: Date()) - 20
             var seenIds = Set<Int>()
             suggestions = allSuggestions.filter { title in
-                let isNew = !savedIds.contains(title.id) && !seenIds.contains(title.id)
+                guard !savedIds.contains(title.id),
+                      !seenIds.contains(title.id) else { return false }
                 seenIds.insert(title.id)
-                return isNew
+                if let year = title.year {
+                    return year >= cutoffYear
+                }
+                return true
             }
             .shuffled()
             

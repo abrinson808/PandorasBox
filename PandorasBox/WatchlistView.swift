@@ -8,12 +8,17 @@
 import SwiftUI
 import SwiftData
 
+enum WatchlistDestination: Hashable {
+    case favorites
+}
+
 struct WatchlistView: View {
+    @Binding var selectedTab: AppTab
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Title.title) private var savedTitles: [Title]
     @State private var navigationPath = NavigationPath()
-    @State private var showFavorites = false
-    let viewModel = ViewModel()
+    @State private var hasLoadedOnce = false
+    @State private var viewModel = ViewModel()
 
     private var watchMeTitles: [Title] {
         savedTitles.filter { $0.isBookmarked && !$0.isWatched }
@@ -96,30 +101,49 @@ struct WatchlistView: View {
                             }
                         }
                     }
+                    .refreshable {
+                        viewModel.suggestions = []
+                        let titles = Array(savedTitles)
+                        async let fetch: () = viewModel.getSuggestions(from: titles)
+                        async let delay: () = Task.sleep(for: .seconds(0.8))
+                        _ = try? await (fetch, delay)
+                    }
                 }
             }
             .navigationTitle("Watchlist")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing){
                     Button {
-                        showFavorites = true
+                        navigationPath.append(WatchlistDestination.favorites)
                     } label: {
                         Image(systemName: favoriteTitles.isEmpty ? "heart" : "heart.fill")
                             .foregroundStyle(favoriteTitles.isEmpty ? Color.secondary : Color.red)
                     }
                 }
             }
-            .navigationDestination(isPresented: $showFavorites) {
-                FavoritesListView(favorites: favoriteTitles)
+            .navigationDestination(for: WatchlistDestination.self) { destination in
+                switch destination {
+                case .favorites:
+                    FavoritesListView(favorites: favoriteTitles)
+                }
             }
-                .task(id: savedTitles.count) {
+                .task {
                     await viewModel.getSuggestions(from: savedTitles)
+                    hasLoadedOnce = true
             }
             .navigationDestination(for: Title.self) { title in
-                TitleDetailView(title: title, showWatchlistButton: false)
+                TitleDetailView(title: title, showWatchlistButton: true)
             }
             .navigationDestination(for: CastMember.self) { member in
                 ArtistDetailView(castMember: member)
+            }
+        }
+        .onChange(of: selectedTab) { oldTab, newTab in
+            if newTab == .watchlist && oldTab != .watchlist && hasLoadedOnce {
+                Task {
+                    viewModel.suggestions = []
+                    await viewModel.getSuggestions(from: savedTitles)
+                }
             }
         }
     }
@@ -189,7 +213,8 @@ private struct WatchlistRow: View {
 
 private struct FavoritesListView: View {
     let favorites: [Title]
-
+    @Environment(\.modelContext) private var modelContext
+    
     var body: some View {
         Group {
             if favorites.isEmpty {
@@ -199,38 +224,50 @@ private struct FavoritesListView: View {
                     description: Text("Tap the heart on a title's detail page to add it here")
                 )
             } else {
-                List(favorites) { title in
-                    NavigationLink(value: title) {
-                        HStack(spacing: 12) {
-                            AsyncImage(url: URL(string: title.posterPath ?? "")) { image in
-                                image
-                                    .resizable()
-                                    .scaledToFill()
-                            } placeholder: {
-                                RoundedRectangle(cornerRadius: 6)
-                                    .fill(.gray.opacity(0.25))
-                                    .overlay {
-                                        Image(systemName: "film")
-                                            .foregroundStyle(.secondary)
-                                    }
+                List {
+                    ForEach(favorites) { title in
+                        NavigationLink(value: title) {
+                            HStack(spacing: 12) {
+                                AsyncImage(url: URL(string: title.posterPath ?? "")) { image in
+                                    image
+                                        .resizable()
+                                        .scaledToFill()
+                                } placeholder: {
+                                    RoundedRectangle(cornerRadius: 6)
+                                        .fill(.gray.opacity(0.25))
+                                        .overlay {
+                                            Image(systemName: "film")
+                                                .foregroundStyle(.secondary)
+                                        }
+                                }
+                                .frame(width: 40, height: 60)
+                                .clipShape(RoundedRectangle(cornerRadius: 6))
+                                
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text((title.name ?? title.title) ?? "Untitled")
+                                        .font(.subheadline)
+                                        .lineLimit(2)
+                                    
+                                    Text(title.mediaType == "tv" ? "TV Show" : "Movie")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                
+                                Spacer()
+                                
+                                Image(systemName: "heart.fill")
+                                    .foregroundStyle(.red)
                             }
-                            .frame(width: 40, height: 60)
-                            .clipShape(RoundedRectangle(cornerRadius: 6))
-
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text((title.name ?? title.title) ?? "Untitled")
-                                    .font(.subheadline)
-                                    .lineLimit(2)
-
-                                Text(title.mediaType == "tv" ? "TV Show" : "Movie")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                        }
+                    }
+                    .onDelete { offsets in
+                        for offset in offsets {
+                            let title = favorites[offset]
+                            title.isFavorite = false
+                            if !title.isBookmarked {
+                                modelContext.delete(title)
                             }
-
-                            Spacer()
-
-                            Image(systemName: "heart.fill")
-                                .foregroundStyle(.red)
+                            try? modelContext.save()
                         }
                     }
                 }
@@ -239,6 +276,7 @@ private struct FavoritesListView: View {
         .navigationTitle("Favorites")
     }
 }
+
 #Preview {
-    WatchlistView()
+    WatchlistView(selectedTab: .constant(.watchlist))
 }

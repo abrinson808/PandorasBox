@@ -102,7 +102,7 @@ struct DataFetcher{
             throw NetworkError.missingConfig
         }
 
-        let path = "3/\(mediaType)/\(titleId)/similar"
+        let path = "3/\(mediaType)/\(titleId)/recommendations"
         guard let url = URL(string: baseURL)?
             .appending(path: path)
             .appending(queryItems: [

@@ -23,7 +23,7 @@ struct ContentView: View {
                 UpcomingView()
             }
             Tab(Constants.watchlistString, systemImage: Constants.watchlistIconString, value: .watchlist) {
-                WatchlistView()
+                WatchlistView(selectedTab: $selectedTab)
             }
             Tab(value: .search, role: .search) {
                 SearchView()

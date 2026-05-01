@@ -74,8 +74,15 @@ struct SimilarTitle: Decodable, Identifiable {
     let posterPath: String?
     let overview: String?
     let mediaType: String?
+    let releaseDate: String?
+    let firstAirDate: String?
 
     var displayName: String {
         (name ?? title) ?? ""
+    }
+    var year: Int? {
+        let dateString = releaseDate ?? firstAirDate ?? ""
+        guard dateString.count >= 4 else { return nil }
+        return Int(String(dateString.prefix(4)))
     }
 }
