@@ -69,6 +69,7 @@ struct TitleDetailView: View {
                                 Image(systemName: (savedTitle?.isFavorite ?? false) ? "heart.fill" : "heart")
                                     .font(.title2)
                                     .foregroundStyle((savedTitle?.isFavorite ?? false) ? .red : .secondary)
+                                    .accessibilityLabel((savedTitle?.isFavorite ?? false) ? "Remove from favorites" : "Add to favorites")
                             }
                             .buttonStyle(.plain)
                         }
@@ -91,11 +92,19 @@ struct TitleDetailView: View {
 
                                 Spacer()
 
-                                HStack(spacing: 4) {
-                                    Image(systemName: "star.fill")
-                                        .foregroundStyle(.yellow)
-                                    Text(String(format: "%.1f", viewModel.voteAverage))
-                                        .bold()
+                                HStack(spacing: 12) {
+                                    if let dateString = viewModel.releaseDate, !dateString.isEmpty {
+                                        Text(String(dateString.prefix(4)))
+                                            .font(.subheadline)
+                                            .foregroundStyle(.secondary)
+                                    }
+
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "star.fill")
+                                            .foregroundStyle(.yellow)
+                                        Text(String(format: "%.1f", viewModel.voteAverage))
+                                            .bold()
+                                    }
                                 }
                             }
                             .padding(.horizontal, 5)
@@ -145,6 +154,8 @@ struct TitleDetailView: View {
                                                         .lineLimit(1)
                                                 }
                                                 .frame(width: 90)
+                                                .accessibilityElement(children: .combine)
+                                                .accessibilityHint("Shows artist details")
                                             }
                                             .buttonStyle(.plain)
                                         }
@@ -204,6 +215,8 @@ struct TitleDetailView: View {
                                                     ProgressView()
                                                 }
                                                 .frame(width: 120, height: 180)
+                                                .accessibilityLabel((similarTitle.title ?? similarTitle.name) ?? "Similar title")
+                                                .accessibilityHint("Shows details")
                                             }
                                         }
                                     }
@@ -254,6 +267,7 @@ struct TitleDetailView: View {
                         } label: {
                             Image(systemName: (savedTitle?.isBookmarked ?? false) ? "bookmark.fill" : "bookmark")
                                 .font(.title3)
+                                .accessibilityLabel((savedTitle?.isBookmarked ?? false) ? "Remove from watchlist" : "Add to watchlist")
                         }
                     }
                 }
@@ -294,6 +308,7 @@ struct TitleDetailView: View {
                                 .multilineTextAlignment(.center)
                         }
                         .frame(width: 60)
+                        .accessibilityElement(children: .combine)
                     }
                 }
                 .padding(.horizontal, 5)

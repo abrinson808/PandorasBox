@@ -92,6 +92,8 @@ struct WatchlistView: View {
                                                     ProgressView()
                                                 }
                                                 .frame(width: 100, height: 150)
+                                                .accessibilityLabel((suggestion.title ?? suggestion.name) ?? "Suggested title")
+                                                .accessibilityHint("Shows details")
                                             }
                                         }
                                     }
@@ -118,6 +120,7 @@ struct WatchlistView: View {
                     } label: {
                         Image(systemName: favoriteTitles.isEmpty ? "heart" : "heart.fill")
                             .foregroundStyle(favoriteTitles.isEmpty ? Color.secondary : Color.red)
+                            .accessibilityLabel("Favorites")
                     }
                 }
             }

@@ -24,6 +24,8 @@ struct Constants {
     static let moviePlaceholderString = "Search for a Movie"
     static let tvPlaceholderString = "Search for a Tv Show"
     static let nowPlayingString = "Now Playing"
+    static let peopleSearchString = "People Search"
+    static let peoplePlaceholderString = "Search for an Actor or Director"
 
     
     static let homeIconString = "house"
@@ -32,6 +34,7 @@ struct Constants {
     static let watchlistIconString = "bookmark"
     static let tvIconString = "tv"
     static let movieIconString = "movieclapper"
+    static let peopleIconString = "person.2"
     
     static let testTitleURL = "https://image.tmdb.org/t/p/original/cCx1m530ph5FmtabVVUpUchEmhe.jpg"
     static let testTitleURL2 = "https://image.tmdb.org/t/p/original/j1yZpgJzjDCbXyA7voSC7SEhcZY.jpg"

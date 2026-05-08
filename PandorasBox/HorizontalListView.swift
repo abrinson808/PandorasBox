@@ -20,18 +20,22 @@ struct HorizontalListView: View {
             ScrollView (.horizontal) {
                 LazyHStack {
                     ForEach(titles) {title in
-                        AsyncImage(url: URL(string: title.posterPath ?? "")){image in
-                            image
-                                .resizable()
-                                .scaledToFit()
-                                .clipShape(RoundedRectangle(cornerRadius: 10))
-                        } placeholder: {
-                            ProgressView()
-                        }
-                        .frame(width: 120, height: 200)
-                        .onTapGesture {
+                        Button {
                             onSelect(title)
+                        } label: {
+                            AsyncImage(url: URL(string: title.posterPath ?? "")){image in
+                                image
+                                    .resizable()
+                                    .scaledToFit()
+                                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                            } placeholder: {
+                                ProgressView()
+                            }
+                            .frame(width: 120, height: 200)
                         }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel((title.name ?? title.title) ?? "Untitled")
+                        .accessibilityHint("Shows details")
                     }
                 }
             }

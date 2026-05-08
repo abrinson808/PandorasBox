@@ -44,6 +44,9 @@ struct HomeView: View {
                             .onTapGesture {
                                 titleDetailPath.append(viewModel.heroTitle)
                             }
+                            .accessibilityLabel((viewModel.heroTitle.name ?? viewModel.heroTitle.title) ?? "Featured Title")
+                            .accessibilityHint("Show details")
+                            .accessibilityAddTraits(.isButton)
                             
                             HorizontalListView(header: Constants.nowPlayingString, titles: viewModel.nowPlaying) { title in
                                 titleDetailPath.append(title)

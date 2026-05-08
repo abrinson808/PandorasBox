@@ -37,8 +37,11 @@ class ViewModel {
     var cast: [CastMember] = []
     var watchProviders: WatchProviderCountry?
     var similarTitles: [SimilarTitle] = []
+    var releaseDate: String?
     var personDetail: PersonDetailResponse?
     var mostRecentCredit: PersonCredit?
+    var personCredits: [PersonCredit] = []
+    var relatedArtists: [CastMember] = []
     var personVideoId: String = ""
     var suggestions: [SimilarTitle] = []
             
@@ -95,6 +98,7 @@ class ViewModel {
             cast = Array(detail.credits.cast.prefix(10))
             watchProviders = detail.watchProviders.results["US"]
             similarTitles = detail.similar.results
+            releaseDate = detail.releaseDate ?? detail.firstAirDate
 
             detailStatus = .success
         } catch {
@@ -113,7 +117,6 @@ class ViewModel {
         }
         
         do {
-            // Pick up to 3 random titles from the watchlist to base suggestions on
             let sampleTitles = Array(savedTitles.shuffled().prefix(3))
             var allSuggestions: [SimilarTitle] = []
             
@@ -151,15 +154,36 @@ class ViewModel {
         do {
             let detail = try await dataFetcher.fetchPersonDetail(for: personId)
             personDetail = detail
+
             let allCredits = (detail.combinedCredits.cast ?? []) + (detail.combinedCredits.crew ?? [])
-            mostRecentCredit = allCredits
-                .sorted {$0.sortDate > $1.sortDate}
-                .first
-            
-            if let credit = mostRecentCredit {
-                personVideoId = try await dataFetcher.fetchTrailerID(
+            let sortedCredits = allCredits.sorted { $0.sortDate > $1.sortDate }
+            mostRecentCredit = sortedCredits.first
+
+            var seenIds = Set<Int>()
+            personCredits = sortedCredits.filter { credit in
+                guard credit.posterPath != nil,
+                      !seenIds.contains(credit.id) else { return false }
+                seenIds.insert(credit.id)
+                return true
+            }
+
+            for credit in sortedCredits.prefix(5) {
+                let trailerId = try await dataFetcher.fetchTrailerID(
                     for: credit.id,
                     mediaType: credit.mediaType ?? "movie")
+                if !trailerId.isEmpty {
+                    personVideoId = trailerId
+                    mostRecentCredit = credit
+                    break
+                }
+            }
+            if let topCredit = mostRecentCredit {
+                let creditDetail = try await dataFetcher.fetchTitleDetail(
+                    for: topCredit.id,
+                    mediaType: topCredit.mediaType ?? "movie")
+                relatedArtists = Array(creditDetail.credits.cast
+                    .filter { $0.id != personId }
+                    .prefix(15))
             }
             personDetailStatus = .success
         } catch {

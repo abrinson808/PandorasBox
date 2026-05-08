@@ -14,6 +14,8 @@ struct TitleDetailResponse: Decodable {
     let credits: Credits
     let watchProviders: WatchProviderResult
     let similar: SimilarResult
+    let releaseDate: String?
+    let firstAirDate: String?
 
     enum CodingKeys: String, CodingKey {
         case genres
@@ -21,6 +23,8 @@ struct TitleDetailResponse: Decodable {
         case credits
         case watchProviders = "watch/providers"
         case similar
+        case releaseDate
+        case firstAirDate
     }
 }
 

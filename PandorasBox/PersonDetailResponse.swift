@@ -41,3 +41,14 @@ struct PersonCredit: Decodable, Identifiable {
         releaseDate ?? firstAirDate ?? ""
     }
 }
+
+struct PersonSearchResponse: Decodable {
+    let results: [PersonSearchItem]
+}
+
+struct PersonSearchItem: Decodable, Identifiable {
+    let id: Int
+    let name: String
+    let profilePath: String?
+    let knownForDepartment: String?
+}

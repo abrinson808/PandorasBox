@@ -32,6 +32,33 @@ struct DataFetcher{
     }
     
     
+    func fetchPeople(for query: String? = nil) async throws -> [PersonSearchItem] {
+        guard let baseURL = tmdbBaseURL else {
+            throw NetworkError.missingConfig
+        }
+        guard let apiKey = tmdbAPIKey else {
+            throw NetworkError.missingConfig
+        }
+
+        let path: String
+        var queryItems = [URLQueryItem(name: "api_key", value: apiKey)]
+
+        if let query, !query.isEmpty {
+            path = "3/search/person"
+            queryItems.append(URLQueryItem(name: "query", value: query))
+        } else {
+            path = "3/trending/person/day"
+        }
+
+        guard let url = URL(string: baseURL)?
+            .appending(path: path)
+            .appending(queryItems: queryItems) else {
+            throw NetworkError.urlBuildFailed
+        }
+
+        return try await fetchAndDecode(url: url, type: PersonSearchResponse.self).results
+    }
+
     func fetchTrailerID(for titleId: Int, mediaType: String) async throws -> String {
         guard let baseURL = tmdbBaseURL else {
             throw NetworkError.missingConfig
