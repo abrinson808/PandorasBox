@@ -24,6 +24,7 @@ struct Constants {
     static let moviePlaceholderString = "Search for a Movie"
     static let tvPlaceholderString = "Search for a Tv Show"
     static let nowPlayingString = "Now Playing"
+    static let comingSoonTVString = "Coming Soon"
     static let peopleSearchString = "People Search"
     static let peoplePlaceholderString = "Search for an Actor or Director"
 

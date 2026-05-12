@@ -28,6 +28,17 @@ class ViewModel {
     var topRatedMovies: [Title] = []
     var topRatedTV: [Title] = []
     var upcomingMovies: [Title] = []
+    var onTheAirTV: [Title] = []
+    var comingSoonMovies: [Title] = []
+    var upcomingMixed: [Title] {
+        var mixed: [Title] = []
+        let maxCount = max(upcomingMovies.count, onTheAirTV.count)
+        for i in 0..<maxCount {
+            if i < upcomingMovies.count { mixed.append(upcomingMovies[i]) }
+            if i < onTheAirTV.count { mixed.append(onTheAirTV[i]) }
+        }
+        return mixed
+    }
     var nowPlaying: [Title] = []
     var heroTitle = Title.previewTitles[0]
     var videoId = ""
@@ -194,9 +205,14 @@ class ViewModel {
     
     func getUpcomingMovies() async {
         upcomingStatus = .fetching
-        
-        do{
-            upcomingMovies = try await dataFetcher.fetchTitles(for: "movie", by: "upcoming")
+
+        do {
+            async let movies = dataFetcher.fetchTitles(for: "movie", by: "upcoming")
+            async let tvShows = dataFetcher.fetchTitles(for: "tv", by: "on_the_air")
+            async let comingSoon = dataFetcher.fetchComingSoon()
+            upcomingMovies = try await movies
+            onTheAirTV = try await tvShows
+            comingSoonMovies = try await comingSoon
             upcomingStatus = .success
         } catch {
             print(error)

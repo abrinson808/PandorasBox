@@ -32,6 +32,41 @@ struct DataFetcher{
     }
     
     
+    func fetchComingSoon() async throws -> [Title] {
+        guard let baseURL = tmdbBaseURL else {
+            throw NetworkError.missingConfig
+        }
+        guard let apiKey = tmdbAPIKey else {
+            throw NetworkError.missingConfig
+        }
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        let today = formatter.string(from: Date())
+        let future = formatter.string(from: Calendar.current.date(byAdding: .month, value: 3, to: Date())!)
+
+        let path = "3/discover/movie"
+        guard let url = URL(string: baseURL)?
+            .appending(path: path)
+            .appending(queryItems: [
+                URLQueryItem(name: "api_key", value: apiKey),
+                URLQueryItem(name: "primary_release_date.gte", value: today),
+                URLQueryItem(name: "primary_release_date.lte", value: future),
+                URLQueryItem(name: "sort_by", value: "popularity.desc")
+            ]) else {
+            throw NetworkError.urlBuildFailed
+        }
+
+        var titles = try await fetchAndDecode(url: url, type: TMDBAPIObject.self).results
+        Constants.addPosterPath(to: &titles)
+        for title in titles {
+            if title.mediaType == nil {
+                title.mediaType = "movie"
+            }
+        }
+        return titles
+    }
+
     func fetchPeople(for query: String? = nil) async throws -> [PersonSearchItem] {
         guard let baseURL = tmdbBaseURL else {
             throw NetworkError.missingConfig
@@ -169,7 +204,7 @@ struct DataFetcher{
         
         if type == "trending" {
             path = "3/\(type)/\(media)/day"
-        } else if type == "top_rated" || type == "upcoming" || type == "now_playing" {
+        } else if type == "top_rated" || type == "upcoming" || type == "now_playing" || type == "on_the_air" {
             path = "3/\(media)/\(type)"
         } else if type == "search" {
             path = "3/\(type)/\(media)"
