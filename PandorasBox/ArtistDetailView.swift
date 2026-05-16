@@ -9,8 +9,9 @@ import SwiftUI
 
 struct ArtistDetailView: View {
     let castMember: CastMember
-    let viewModel = ViewModel()
-    
+    @State private var viewModel = ViewModel()
+    @State private var showFullBio = false
+
     var body: some View {
         GeometryReader { geometry in
             switch viewModel.personDetailStatus {
@@ -45,6 +46,43 @@ struct ArtistDetailView: View {
                         }
                         .padding(.horizontal)
                         
+                        
+                        if let detail = viewModel.personDetail {
+                            HStack(alignment: .top, spacing: 12) {
+                                if let profilePath = detail.profilePath {
+                                    NavigationLink {
+                                        PersonImagesView(
+                                            name: detail.name,
+                                            images: viewModel.personImages
+                                        )
+                                    } label: {
+                                        AsyncImage(url: URL(string: Constants.profileImageURLStart + profilePath)) { image in
+                                            image
+                                                .resizable()
+                                                .scaledToFill()
+                                        } placeholder: {
+                                            Image(systemName: "person.circle.fill")
+                                                .resizable()
+                                                .foregroundStyle(.gray)
+                                        }
+                                        .frame(width: 120, height: 160)
+                                        .clipShape(RoundedRectangle(cornerRadius:10))
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                                Button {
+                                    showFullBio = true
+                                } label: {
+                                    Text(detail.biography ?? "No biography available")
+                                        .font(.body)
+                                        .lineLimit(8)
+                                        .multilineTextAlignment(.leading)
+                                        .foregroundStyle(.primary)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                            .padding(.horizontal)
+                        }
                         if !viewModel.personVideoId.isEmpty {
                             VStack(alignment: .leading, spacing: 8) {
                                 if let credit = viewModel.mostRecentCredit {
@@ -56,29 +94,6 @@ struct ArtistDetailView: View {
                                     .aspectRatio(1.3, contentMode: .fit)
                             }
                         }
-                        if let detail = viewModel.personDetail {
-                            HStack(alignment: .top, spacing: 12) {
-                                if let profilePath = detail.profilePath {
-                                    AsyncImage(url: URL(string: Constants.profileImageURLStart + profilePath)) { image in
-                                        image
-                                            .resizable()
-                                            .scaledToFill()
-                                        
-                                    } placeholder: {
-                                        Image(systemName: "person.circle.fill")
-                                            .resizable()
-                                            .foregroundStyle(.gray)
-                                    }
-                                    .frame(width: 120, height: 160)
-                                    .clipShape(RoundedRectangle(cornerRadius:10))
-                                }
-                                Text(detail.biography ?? "No biography available")
-                                    .font(.body)
-                                    .lineLimit(8)
-                            }
-                            .padding(.horizontal)
-                        }
-
                         if !viewModel.personCredits.isEmpty {
                                                     VStack(alignment: .leading, spacing: 12) {
                                                         Text("Known For")
@@ -204,6 +219,22 @@ struct ArtistDetailView: View {
         .navigationDestination(for: CastMember.self) { member in
             ArtistDetailView(castMember: member)
         }
+        .sheet(isPresented: $showFullBio) {
+            NavigationStack {
+                ScrollView {
+                    Text(viewModel.personDetail?.biography ?? "No biography available")
+                        .font(.body)
+                        .padding()
+                }
+                .navigationTitle("Biography")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Done") { showFullBio = false }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -212,49 +243,79 @@ private struct PersonFilmographyView: View {
     let credits: [PersonCredit]
 
     var body: some View {
-        List(credits) { credit in
-            NavigationLink(value: Title(
-                id: credit.id,
-                title: credit.title,
-                name: credit.name,
-                overview: credit.overview,
-                posterPath: Constants.posterURLStart + (credit.posterPath ?? ""),
-                mediaType: credit.mediaType ?? "movie"
-            )) {
-                HStack(spacing: 12) {
-                    AsyncImage(url: URL(string: Constants.posterURLStart + (credit.posterPath ?? ""))) { image in
-                        image
-                            .resizable()
-                            .scaledToFill()
-                    } placeholder: {
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(.gray.opacity(0.25))
-                            .overlay {
-                                Image(systemName: "film")
-                                    .foregroundStyle(.secondary)
+            ScrollView {
+                LazyVGrid(columns: [GridItem(), GridItem(), GridItem()], spacing: 12) {
+                    ForEach(credits) { credit in
+                        NavigationLink(value: Title(
+                            id: credit.id,
+                            title: credit.title,
+                            name: credit.name,
+                            overview: credit.overview,
+                            posterPath: Constants.posterURLStart + (credit.posterPath ?? ""),
+                            mediaType: credit.mediaType ?? "movie"
+                        )) {
+                            VStack {
+                                AsyncImage(url: URL(string: Constants.posterURLStart + (credit.posterPath ?? ""))) { image in
+                                    image
+                                        .resizable()
+                                        .scaledToFill()
+                                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                                } placeholder: {
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .fill(.gray.opacity(0.2))
+                                }
+                                .frame(height: 160)
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
+
+                                Text(credit.displayName)
+                                    .font(.caption)
+                                    .lineLimit(1)
                             }
-                    }
-                    .frame(width: 50, height: 75)
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
-
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(credit.displayName)
-                            .font(.subheadline)
-                            .lineLimit(2)
-
-                        if let character = credit.character, !character.isEmpty {
-                            Text("as \(character)")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
                         }
-
-                        Text(credit.mediaType == "tv" ? "TV Show" : "Movie")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
+                        .buttonStyle(.plain)
                     }
                 }
+                .padding(.horizontal)
+            }
+            .navigationTitle(name)
+                    .navigationDestination(for: Title.self) { title in
+                        TitleDetailView(title: title)
             }
         }
-        .navigationTitle(name)
+}
+
+private struct PersonImagesView: View {
+    let name: String
+    let images: [PersonImage]
+
+    var body: some View {
+        ScrollView {
+            if images.isEmpty {
+                ContentUnavailableView(
+                    "No Photos Available",
+                    systemImage: "photo.on.rectangle",
+                    description: Text("This artist doesn't have any additional photos on file.")
+                )
+                .padding(.top, 60)
+            } else {
+                LazyVGrid(columns: [GridItem(), GridItem()], spacing: 8) {
+                    ForEach(images) { image in
+                        AsyncImage(url: URL(string: Constants.profileImageURLStart + image.filePath)) { img in
+                            img
+                                .resizable()
+                                .scaledToFill()
+                        } placeholder: {
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(.gray.opacity(0.2))
+                        }
+                        .aspectRatio(image.aspectRatio, contentMode: .fit)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                    }
+                }
+                .padding(.horizontal)
+            }
+        }
+        .navigationTitle("\(name) — Photos")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }

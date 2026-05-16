@@ -52,3 +52,13 @@ struct PersonSearchItem: Decodable, Identifiable {
     let profilePath: String?
     let knownForDepartment: String?
 }
+
+struct PersonImageResponse: Decodable {
+    let profiles: [PersonImage]
+}
+
+struct PersonImage: Decodable, Identifiable {
+    let filePath: String
+    let aspectRatio: Double
+    var id: String { filePath }
+}

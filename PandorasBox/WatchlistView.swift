@@ -10,6 +10,7 @@ import SwiftData
 
 enum WatchlistDestination: Hashable {
     case favorites
+    case watchMeList
 }
 
 struct WatchlistView: View {
@@ -43,19 +44,30 @@ struct WatchlistView: View {
                 } else {
                     List {
                         Section("Watch Me!") {
-                            if watchMeTitles.isEmpty {
-                                Text("No titles waiting")
-                                    .foregroundStyle(.secondary)
-                            } else {
-                                ForEach(watchMeTitles) { title in
-                                    WatchlistRow(title: title)
-                                }
-                                .onDelete { offsets in
-                                    deleteTitles(at: offsets, from: watchMeTitles)
+                            Section("Watch Me!") {
+                                if watchMeTitles.isEmpty {
+                                    Text("No titles waiting")
+                                        .foregroundStyle(.secondary)
+                                } else {
+                                    ForEach(watchMeTitles.prefix(5)) { title in
+                                        WatchlistRow(title: title)
+                                    }
+                                    .onDelete { offsets in
+                                        deleteTitles(at: offsets, from: Array(watchMeTitles.prefix(5)))
+                                    }
+                                    
+                                    if watchMeTitles.count > 5 {
+                                        Button {
+                                            navigationPath.append(WatchlistDestination.watchMeList)
+                                        } label: {
+                                            Text("See All (\(watchMeTitles.count))")
+                                                .font(.subheadline)
+                                                .bold()
+                                        }
+                                    }
                                 }
                             }
                         }
-
                         Section("Already Watched") {
                             if alreadyWatchedTitles.isEmpty {
                                 Text("Nothing marked watched yet")
@@ -128,6 +140,8 @@ struct WatchlistView: View {
                 switch destination {
                 case .favorites:
                     FavoritesListView(favorites: favoriteTitles)
+                case .watchMeList:
+                    WatchMeListView(titles:watchMeTitles)
                 }
             }
                 .task {
@@ -277,6 +291,35 @@ private struct FavoritesListView: View {
             }
         }
         .navigationTitle("Favorites")
+    }
+}
+private struct WatchMeListView: View {
+    let titles: [Title]
+    @Environment(\.modelContext) private var modelContext
+
+    var body: some View {
+        Group {
+            if titles.isEmpty {
+                ContentUnavailableView(
+                    "No Titles to Watch",
+                    systemImage: "play.rectangle",
+                    description: Text("Add titles to your watchlist from any detail page")
+                )
+            } else {
+                List {
+                    ForEach(titles) { title in
+                        WatchlistRow(title: title)
+                    }
+                    .onDelete { offsets in
+                        for offset in offsets {
+                            modelContext.delete(titles[offset])
+                        }
+                        try? modelContext.save()
+                    }
+                }
+            }
+        }
+        .navigationTitle("Watch Me!")
     }
 }
 

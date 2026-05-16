@@ -30,6 +30,7 @@ class ViewModel {
     var upcomingMovies: [Title] = []
     var onTheAirTV: [Title] = []
     var comingSoonMovies: [Title] = []
+    var availableTitles: [Title] = []
     var upcomingMixed: [Title] {
         var mixed: [Title] = []
         let maxCount = max(upcomingMovies.count, onTheAirTV.count)
@@ -39,6 +40,7 @@ class ViewModel {
         }
         return mixed
     }
+    var heroTitles: [Title] = []
     var nowPlaying: [Title] = []
     var heroTitle = Title.previewTitles[0]
     var videoId = ""
@@ -50,6 +52,7 @@ class ViewModel {
     var similarTitles: [SimilarTitle] = []
     var releaseDate: String?
     var personDetail: PersonDetailResponse?
+    var personImages: [PersonImage] = []
     var mostRecentCredit: PersonCredit?
     var personCredits: [PersonCredit] = []
     var relatedArtists: [CastMember] = []
@@ -66,16 +69,24 @@ class ViewModel {
                 async let tRMovies = dataFetcher.fetchTitles(for: "movie", by: "top_rated")
                 async let tRTV = dataFetcher.fetchTitles(for: "tv", by: "top_rated")
                 async let nPlaying = dataFetcher.fetchTitles(for: "movie", by: "now_playing")
+                async let upcoming = dataFetcher.fetchTitles(for: "movie", by: "upcoming")
+                async let onAir = dataFetcher.fetchTitles(for: "tv", by: "on_the_air")
                 
                 trendingTV = try await tTV
                 trendingMovies = try await tMovies
                 topRatedTV = try await tRTV
                 topRatedMovies = try await tRMovies
                 nowPlaying = try await nPlaying
+                upcomingMovies = try await upcoming
+                onTheAirTV = try await onAir
                 
                 if let title = trendingTV.randomElement() {
                     heroTitle = title
                 }
+
+                let combinedPool = nowPlaying + onTheAirTV + upcomingMovies + trendingMovies + trendingTV
+                heroTitles = Array(combinedPool.shuffled().prefix(10))
+
                 homeStatus = .success
             } catch {
                 print(error)
@@ -86,6 +97,11 @@ class ViewModel {
         }
     }
     
+    func refreshTitles() async {
+        trendingMovies = []
+        await getTitles()
+    }
+
     func getVideoId(for titleId: Int, mediaType: String) async {
         videoIdStatus = .fetching
 
@@ -196,6 +212,7 @@ class ViewModel {
                     .filter { $0.id != personId }
                     .prefix(15))
             }
+            personImages = (try? await dataFetcher.fetchPersonImages(for: personId)) ?? []
             personDetailStatus = .success
         } catch {
             print(error)
@@ -210,9 +227,13 @@ class ViewModel {
             async let movies = dataFetcher.fetchTitles(for: "movie", by: "upcoming")
             async let tvShows = dataFetcher.fetchTitles(for: "tv", by: "on_the_air")
             async let comingSoon = dataFetcher.fetchComingSoon()
+            async let inTheaters = dataFetcher.fetchTitles(for: "movie", by: "now_playing")
+            async let available = dataFetcher.fetchAvailableTitles()
             upcomingMovies = try await movies
             onTheAirTV = try await tvShows
             comingSoonMovies = try await comingSoon
+            nowPlaying = try await inTheaters
+            availableTitles = try await available
             upcomingStatus = .success
         } catch {
             print(error)

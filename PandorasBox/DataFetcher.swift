@@ -32,6 +32,37 @@ struct DataFetcher{
     }
     
     
+    func fetchAvailableTitles() async throws -> [Title] {
+        guard let baseURL = tmdbBaseURL else {
+            throw NetworkError.missingConfig
+        }
+        guard let apiKey = tmdbAPIKey else {
+            throw NetworkError.missingConfig
+        }
+
+        let providers = "8|15|9|337|384|350|531|386"
+        let path = "3/discover/movie"
+        guard let url = URL(string: baseURL)?
+            .appending(path: path)
+            .appending(queryItems: [
+                URLQueryItem(name: "api_key", value: apiKey),
+                URLQueryItem(name: "with_watch_providers", value: providers),
+                URLQueryItem(name: "watch_region", value: "US"),
+                URLQueryItem(name: "sort_by", value: "popularity.desc")
+            ]) else {
+            throw NetworkError.urlBuildFailed
+        }
+
+        var titles = try await fetchAndDecode(url: url, type: TMDBAPIObject.self).results
+        Constants.addPosterPath(to: &titles)
+        for title in titles {
+            if title.mediaType == nil {
+                title.mediaType = "movie"
+            }
+        }
+        return titles
+    }
+
     func fetchComingSoon() async throws -> [Title] {
         guard let baseURL = tmdbBaseURL else {
             throw NetworkError.missingConfig
@@ -134,6 +165,24 @@ struct DataFetcher{
         }
 
         return try await fetchAndDecode(url: url, type: TitleDetailResponse.self)
+    }
+    
+    func fetchPersonImages(for personId: Int) async throws -> [PersonImage] {
+        guard let baseURL = tmdbBaseURL else {
+            throw NetworkError.missingConfig
+        }
+        guard let apiKey = tmdbAPIKey else {
+            throw NetworkError.missingConfig
+        }
+
+        let path = "3/person/\(personId)/images"
+        guard let url = URL(string: baseURL)?
+            .appending(path: path)
+            .appending(queryItems: [URLQueryItem(name: "api_key", value: apiKey)]) else {
+            throw NetworkError.urlBuildFailed
+        }
+
+        return try await fetchAndDecode(url: url, type: PersonImageResponse.self).profiles
     }
     
     func fetchPersonDetail(for personId: Int) async throws -> PersonDetailResponse {

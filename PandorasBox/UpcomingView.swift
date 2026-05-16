@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct UpcomingView: View {
-    let viewModel = ViewModel()
+    @State private var viewModel = ViewModel()
     @State private var navigationPath = NavigationPath()
     
     var body: some View {
@@ -23,34 +23,41 @@ struct UpcomingView: View {
                     case .success:
                         ScrollView {
                             VStack(alignment: .leading, spacing: 16) {
-                                // MARK: - Coming Soon (horizontal scroll)
-                                if !viewModel.comingSoonMovies.isEmpty {
-                                    ScrollView(.horizontal, showsIndicators: false) {
-                                        LazyHStack(spacing: 12) {
-                                            ForEach(viewModel.comingSoonMovies) { title in
-                                                NavigationLink(value: title) {
-                                                    VStack {
-                                                        AsyncImage(url: URL(string: title.posterPath ?? "")) { image in
-                                                            image
-                                                                .resizable()
-                                                                .scaledToFit()
-                                                                .clipShape(RoundedRectangle(cornerRadius: 10))
-                                                        } placeholder: {
-                                                            RoundedRectangle(cornerRadius: 10)
-                                                                .fill(.gray.opacity(0.2))
-                                                        }
-                                                        .frame(width: 120, height: 180)
+                                // MARK: - In Theaters Near You
+                                if !viewModel.nowPlaying.isEmpty {
+                                    VStack(alignment: .leading) {
+                                        Text("In Theaters Near You")
+                                            .font(.title2)
+                                            .bold()
+                                            .padding(.horizontal)
 
-                                                        Text((title.name ?? title.title) ?? "")
-                                                            .font(.caption)
-                                                            .lineLimit(1)
+                                        ScrollView(.horizontal, showsIndicators: false) {
+                                            LazyHStack(spacing: 12) {
+                                                ForEach(viewModel.nowPlaying) { title in
+                                                    NavigationLink(value: title) {
+                                                        VStack {
+                                                            AsyncImage(url: URL(string: title.posterPath ?? "")) { image in
+                                                                image
+                                                                    .resizable()
+                                                                    .scaledToFit()
+                                                                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                                                            } placeholder: {
+                                                                RoundedRectangle(cornerRadius: 10)
+                                                                    .fill(.gray.opacity(0.2))
+                                                            }
+                                                            .frame(width: 120, height: 180)
+
+                                                            Text((title.name ?? title.title) ?? "")
+                                                                .font(.caption)
+                                                                .lineLimit(1)
+                                                        }
+                                                        .frame(width: 120)
                                                     }
-                                                    .frame(width: 120)
+                                                    .buttonStyle(.plain)
                                                 }
-                                                .buttonStyle(.plain)
                                             }
+                                            .padding(.horizontal)
                                         }
-                                        .padding(.horizontal)
                                     }
                                 }
 
@@ -61,7 +68,7 @@ struct UpcomingView: View {
                                     .padding(.horizontal)
 
                                 List {
-                                    ForEach(viewModel.upcomingMixed) { title in
+                                    ForEach(viewModel.availableTitles) { title in
                                         NavigationLink(value: title) {
                                             HStack(spacing: 12) {
                                                 AsyncImage(url: URL(string: title.posterPath ?? "")) { image in
@@ -96,6 +103,44 @@ struct UpcomingView: View {
                                 .listStyle(.plain)
                                 .frame(height: 270)
                                 .scrollContentBackground(.hidden)
+
+                                // MARK: - The Forecast (Coming Soon)
+                                if !viewModel.comingSoonMovies.isEmpty {
+                                    VStack(alignment: .leading) {
+                                        Text("The Forecast")
+                                            .font(.title2)
+                                            .bold()
+                                            .padding(.horizontal)
+
+                                        ScrollView(.horizontal, showsIndicators: false) {
+                                            LazyHStack(spacing: 12) {
+                                                ForEach(viewModel.comingSoonMovies) { title in
+                                                    NavigationLink(value: title) {
+                                                        VStack {
+                                                            AsyncImage(url: URL(string: title.posterPath ?? "")) { image in
+                                                                image
+                                                                    .resizable()
+                                                                    .scaledToFit()
+                                                                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                                                            } placeholder: {
+                                                                RoundedRectangle(cornerRadius: 10)
+                                                                    .fill(.gray.opacity(0.2))
+                                                            }
+                                                            .frame(width: 120, height: 180)
+
+                                                            Text((title.name ?? title.title) ?? "")
+                                                                .font(.caption)
+                                                                .lineLimit(1)
+                                                        }
+                                                        .frame(width: 120)
+                                                    }
+                                                    .buttonStyle(.plain)
+                                                }
+                                            }
+                                            .padding(.horizontal)
+                                        }
+                                    }
+                                }
                             }
                         }
                     case .failed(let underlyingError):

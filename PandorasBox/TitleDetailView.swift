@@ -23,31 +23,23 @@ struct TitleDetailView: View {
         guard let titleId = title.id else { return nil }
         return savedTitles.first(where: { $0.id == titleId })
     }
-    let viewModel = ViewModel()
+    @State private var viewModel = ViewModel()
     @Environment(\.modelContext) var modelContext
     @Query private var savedTitles: [Title]
     
     var body: some View {
-        GeometryReader{ geometry in
-            switch viewModel.videoIdStatus {
-            case .notStarted:
-                EmptyView()
-            case .fetching:
-                ProgressView()
-                    .frame(width:geometry.size.width, height:geometry.size.height)
-            case .success:
-                ScrollView{
-                    LazyVStack(alignment: .leading){
+        ScrollView{
+            LazyVStack(alignment: .leading){
                         YoutubePlayer(videoID: viewModel.videoId)
                             .aspectRatio(1.3, contentMode: .fit)
-                        
+
                         HStack {
                             Text(titleName)
                                 .bold()
                                 .font(.title2)
-                                
+
                             Spacer()
-                            
+
                             Button {
                                 if let exsiting = savedTitle {
                                     exsiting.isFavorite.toggle()
@@ -74,28 +66,30 @@ struct TitleDetailView: View {
                             .buttonStyle(.plain)
                         }
                         .padding(5)
-        
+
                         Text(title.overview ?? "")
                             .padding(5)
                         
                         // MARK: - Genres + Rating
                         if !viewModel.genres.isEmpty {
                             HStack {
-                                ForEach(viewModel.genres) { genre in
-                                    Text(genre.name)
-                                        .font(.caption)
-                                        .padding(.horizontal, 8)
-                                        .padding(.vertical, 4)
-                                        .background(.ultraThinMaterial)
-                                        .clipShape(Capsule())
+                                HStack(spacing: 6) {
+                                    ForEach(viewModel.genres.prefix(2)) { genre in
+                                        Text(genre.name)
+                                            .font(.caption)
+                                            .padding(.horizontal, 8)
+                                            .padding(.vertical, 4)
+                                            .background(.ultraThinMaterial)
+                                            .clipShape(Capsule())
+                                    }
                                 }
 
                                 Spacer()
 
-                                HStack(spacing: 12) {
+                                VStack(alignment: .trailing, spacing: 4) {
                                     if let dateString = viewModel.releaseDate, !dateString.isEmpty {
-                                        Text(String(dateString.prefix(4)))
-                                            .font(.subheadline)
+                                        Text("Air Date: \(formattedDate(dateString))")
+                                            .font(.caption)
                                             .foregroundStyle(.secondary)
                                     }
 
@@ -106,6 +100,7 @@ struct TitleDetailView: View {
                                             .bold()
                                     }
                                 }
+                                .fixedSize()
                             }
                             .padding(.horizontal, 5)
                             .padding(.vertical, 8)
@@ -227,11 +222,18 @@ struct TitleDetailView: View {
                         }
                     }
                 }
-            case .failed(let underlyingError):
-                Text(underlyingError.localizedDescription)
-                    .errorMessage()
-                    .frame(width: geometry.size.width, height: geometry.size.height)
+        .background {
+            AsyncImage(url: URL(string: title.posterPath ?? "")) { image in
+                image
+                    .resizable()
+                    .scaledToFill()
+                    .blur(radius: 25)
+                    .opacity(0.6)
+                    .overlay(.thinMaterial)
+            } placeholder: {
+                Color(.secondarySystemBackground)
             }
+            .ignoresSafeArea()
         }
         .task {
             if let titleId = title.id {
@@ -275,6 +277,17 @@ struct TitleDetailView: View {
         }   // ← line 214, end of body
     }
     
+    private func formattedDate(_ dateString: String) -> String {
+        let input = DateFormatter()
+        input.dateFormat = "yyyy-MM-dd"
+        let output = DateFormatter()
+        output.dateFormat = "MM/dd/yyyy"
+        if let date = input.date(from: dateString) {
+            return output.string(from: date)
+        }
+        return dateString
+    }
+
     @ViewBuilder
     private func providerRow(label: String, providers: [WatchProvider]) -> some View {
         VStack(alignment: .leading, spacing: 4) {
